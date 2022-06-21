@@ -1,0 +1,200 @@
+## Import the packages
+
+## for random number generation
+import random
+
+## to be able to send requests to the API
+import requests
+
+## for data manipulation
+import pandas as pd
+
+## define random pokemon
+
+def random_pokemon():
+    pokemon_number = random.randint(1, 151)
+    url = 'https://pokeapi.co/api/v2/pokemon/{}/'.format(pokemon_number)
+    response = requests.get(url)
+    pokemon = response.json()
+
+    ## returns the stats we have defined from the API
+    return{
+        'name': pokemon['name'],
+        'id': pokemon['id'],
+        'height': pokemon['height'],
+        'weight': pokemon['weight'],
+        'order': pokemon['order'],
+    }
+
+## assign the random numbers to a particular stat
+def random_stat():
+    random_number = random.randint(1, 4)
+    if random_number == 1:
+        stat = 'id'
+    elif random_number == 2:
+        stat = 'height'
+    elif random_number == 3:
+        stat = 'weight'
+    else:
+        stat = 'order'
+    return stat
+## creating global variables for my score so that they can be called in the function    
+my_score = 0
+opponent_score = 0
+
+## Ask for the players name and use it throughout
+print('What is your name?')
+
+playername=input()
+
+## Add a round number to help us get the final score
+roundnum = 0
+
+def my_round():
+    ## calling the global variables for my_score so the function has a definition for this
+    global my_score 
+    global opponent_score
+    global playername
+    global roundnum
+
+    ## give the player 3 random pokemon 
+    random_pokemon_1 = random_pokemon()
+    random_pokemon_2 = random_pokemon()
+    random_pokemon_3 = random_pokemon()
+
+    ## Ask the player to choose a pokemon from the above list
+    print('Your pokemon choices are: {}, {}, {} '.format(random_pokemon_1['name'], random_pokemon_2['name'], random_pokemon_3['name']))
+    pokemon_choice = input('Which pokemon do you want to use? ')
+
+    if pokemon_choice == random_pokemon_1['name']:
+        my_pokemon = random_pokemon_1
+    elif pokemon_choice == random_pokemon_2['name']:
+        my_pokemon = random_pokemon_2
+    elif pokemon_choice == random_pokemon_3['name']:
+        my_pokemon = random_pokemon_3
+
+    ##Ask the play to choose a statistic
+    print('Your stats are: id: {}, height: {}, weight: {}, order: {} '.format(my_pokemon['id'],my_pokemon['height'],my_pokemon['weight'],my_pokemon['order']))
+    stat_choice = input('Which stat do you want to use? (id, height, weight, order) ')
+    
+    ## shows which pokemon the "opponent has been assigned"
+    opponent_pokemon = random_pokemon()
+    print('The opponent chose {}'.format(opponent_pokemon['name']))
+    
+    my_stat = my_pokemon[stat_choice]
+    opponent_stat = opponent_pokemon[stat_choice]
+
+    ## Calculates the outcome of the game
+    if my_stat > opponent_stat:
+        print('You Win!')
+        my_score = my_score + 1
+    elif my_stat < opponent_stat:
+        print('You Lose!')
+        opponent_score = opponent_score + 1
+    else:
+        print('It is a draw!')
+
+    ## tell the player the score, using their name
+    print("The score so far is: {} {}, Opponent {} ".format(playername, my_score, opponent_score))
+    
+    ## Counts the round number, not in use yet but could be used when assessing the high score
+    roundnum = roundnum +1
+
+    ## returns the player name, the scores and the round numbers
+    return playername, my_score, opponent_score, roundnum
+
+
+
+def opponent_round():
+
+    ## calling the global variable so that we have the total score over the whole game
+    global my_score 
+    global opponent_score
+    global playername
+    global roundnum
+    
+    ## Gets three random pokemon for the player to choose from
+    random_pokemon_1 = random_pokemon()
+    random_pokemon_2 = random_pokemon()
+    random_pokemon_3 = random_pokemon()
+
+    ## Asks the player to choose their pokemon
+    print('Your pokemon choices are: {}, {}, {} '.format(random_pokemon_1['name'], random_pokemon_2['name'], random_pokemon_3['name']))
+    pokemon_choice = input('Which pokemon do you want to use? ')
+
+    if pokemon_choice == random_pokemon_1['name']:
+        my_pokemon = random_pokemon_1
+    elif pokemon_choice == random_pokemon_2['name']:
+        my_pokemon = random_pokemon_2
+    elif pokemon_choice == random_pokemon_3['name']:
+        my_pokemon = random_pokemon_3
+    
+
+    ## the opponent is assigned a pokemon and in this round also a statistic 
+    opponent_pokemon = random_pokemon()
+    print('The opponent chose {}'.format(opponent_pokemon['name']))
+
+    opponent_stat_choice = random_stat()
+    print('The opponent chose {} as their stat choice'.format(opponent_stat_choice))
+
+    opponent_stat = opponent_pokemon[opponent_stat_choice]
+
+    ## gets the statistic which has been assigned for the players pokemon
+    my_stat = my_pokemon[opponent_stat_choice]
+
+    ## calculates the score
+    if my_stat > opponent_stat:
+        print('You Win!')
+        my_score =  my_score + 1
+    elif my_stat < opponent_stat:
+        print('You Lose!')
+        opponent_score = opponent_score + 1
+    else:
+        print('Draw!')
+
+    ## tell the players what the score is
+    print("The score so far is: {} {}, Opponent {} ".format(playername, my_score, opponent_score))
+    
+    ## count the round numbers, not in use yet 
+    roundnum = roundnum +1
+
+    ## return the player name, score and round number
+    return playername, my_score, opponent_score, roundnum
+
+
+def run():
+    
+        ## read the CSV file containing the previous scores
+        ## create a pandas dataframe
+        df = pd.read_csv('data.csv', index_col=0)
+        
+        ## say how many rounds should be completed
+        for rounds in range(2):
+            my_round_scores = my_round()
+            opponent_round_scores = opponent_round()       
+          
+        ## since these global variable were overwritten they will now show us the total score
+        ## create two columns taking the playername and the score
+            data = {'PlayerName': playername,
+        'Score': my_score}
+         
+        ## create a pandas dataframe from the  aboce
+            df2 = pd.DataFrame(data, index =[0])
+        
+        ## check what the total high score is 
+        high_score = df['Score'].max()
+        
+        ## calculate if the high score has been beaten
+        if my_score > high_score:
+            print('Congratulations {} you have the new high score'.format(playername))
+        else:
+            print('The highscore remains {}. Play again to beat the high score!'.format(high_score))
+            
+        ## join the two tables so that the most recent scores are added to the list
+        dfall = pd.concat([df2,df])
+        
+        ## output the table to a csv so that it is stored
+        dfall.to_csv('data.csv')    
+
+
+run()
